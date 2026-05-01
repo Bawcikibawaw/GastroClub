@@ -251,10 +251,10 @@
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
+<script>
     // --- REPLACE WITH YOUR OWN FIREBASE CREDENTIALS ---
     const firebaseConfig = {
         apiKey: "AIzaSyAZQp2bLW3Lsz2s-RsthDtQX0R-f2kB7h4",
@@ -266,8 +266,9 @@
         measurementId: "G-V6W53WRRLX"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
     // --- Database of 33 Michelin-Star Dishes ---
     const dishes = [
@@ -476,13 +477,8 @@
     let score = 0;
     let foundIngredients = [];
     let guessesMade = [];
+    let localLeaderboard = JSON.parse(localStorage.getItem('michelin_ingredient_leaderboard')) || [];
 
-    // Expose functions to the window object so `onclick` works with `<script type="module">`
-    window.submitGuess = submitGuess;
-    window.nextLevel = nextLevel;
-    window.resetGame = resetGame;
-
-    // Normalization Function
     function normalizeString(str) {
         return str
             .toLowerCase()
@@ -586,32 +582,16 @@
         checkLeaderboard();
     }
 
-    // --- Firebase Functions ---
     async function checkLeaderboard() {
         if (score > 0) {
             try {
-                const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(5));
-                const querySnapshot = await getDocs(q);
-
-                let minScore = 0;
-                let scores = [];
-                querySnapshotToArray(querySnapshot); // just to load
-
-                querySnapshotToArray(querySnapshot).forEach((doc) => {
-                    scores.push(doc.score);
-                    minScore = doc.score;
-                });
-
-                querySnapshotToArray(querySnapshot).forEach((doc) => {
-                    scores.push(doc.score);
-                    minScore = doc.score;
-                });
-
+                const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(5).get();
                 let array = [];
-                querySnapshot.forEach((doc) => {
+                snapshot.forEach((doc) => {
                     array.push(doc.data());
                 });
-                minScore = array.length > 0 ? array[array.length - 1].score : 0;
+
+                let minScore = array.length > 0 ? array[array.length - 1].score : 0;
 
                 if (array.length < 5 || score > minScore) {
                     setTimeout(() => {
@@ -622,17 +602,33 @@
                     }, 600);
                 }
             } catch (e) {
-                console.error("Error reading leaderboard: ", e);
+                // Fallback to local leaderboard storage if database fails
+                let minScore = 0;
+                if (localLeaderboard.length >= 5) {
+                    minScore = localLeaderboard[localLeaderboard.length - 1].score;
+                }
+                if (localLeaderboard.length < 5 || score > minScore) {
+                    setTimeout(() => {
+                        const playerName = prompt("🎉 High Score Reached! Enter your name for the leaderboard:");
+                        if (playerName && playerName.trim() !== "") {
+                            localLeaderboard.push({ name: playerName.trim(), score: score });
+                            localLeaderboard.sort((a, b) => b.score - a.score);
+                            localLeaderboard = localLeaderboard.slice(0, 5);
+                            localStorage.setItem('michelin_ingredient_leaderboard', JSON.stringify(localLeaderboard));
+                            updateLeaderboardDisplay();
+                        }
+                    }, 600);
+                }
             }
         }
     }
 
     async function saveScoreToFirebase(name, score) {
         try {
-            await addDoc(collection(db, "leaderboard"), {
+            await db.collection("leaderboard").add({
                 name: name,
                 score: score,
-                timestamp: new Date()
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             updateLeaderboardDisplay();
         } catch (e) {
@@ -642,36 +638,54 @@
 
     async function updateLeaderboardDisplay() {
         try {
-            const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(5));
-            const querySnapshot = await getDocs(q);
-
+            const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(5).get();
             const listElement = document.getElementById('leaderboard-list');
             listElement.innerHTML = '';
 
-            if (querySnapshot.empty) {
+            if (snapshot.empty) {
                 listElement.innerHTML = "<li>No entries yet. Be the first!</li>";
                 return;
             }
 
-            querySnapshot.forEach((doc) => {
+            snapshot.forEach((doc) => {
                 const player = doc.data();
                 listElement.innerHTML += `<li><b>${escapeHtml(player.name)}</b>: ${player.score} pts</li>`;
             });
         } catch (e) {
-            console.error("Error updating leaderboard display: ", e);
+            const listElement = document.getElementById('leaderboard-list');
+            if (localLeaderboard.length === 0) {
+                listElement.innerHTML = "<li>No entries yet. Be the first!</li>";
+            } else {
+                listElement.innerHTML = localLeaderboard
+                    .map(player => `<li><b>${escapeHtml(player.name)}</b>: ${player.score} pts</li>`)
+                    .join('');
+            }
         }
+    }
+
+    function nextLevel() {
+        if (currentDishIndex === dishes.length - 1) {
+            resetGame();
+        } else {
+            currentDishIndex = (currentDishIndex + 1) % dishes.length;
+            loadDish(currentDishIndex);
+        }
+    }
+
+    function resetGame() {
+        score = 0;
+        currentDishIndex = 0;
+        loadDish(0);
+    }
+
+    function escapeHtml(string) {
+        return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // Initialize the game
     window.onload = () => {
         loadDish(0);
-        updateLeaderboardDisplay(); // Fetch latest board on startup
-
-        document.getElementById('guess-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                submitGuess();
-            }
-        });
+        updateLeaderboardDisplay();
     };
 </script>
 </body>
