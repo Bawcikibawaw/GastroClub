@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chef's Canvas - Ingredient Guessing Game</title>
+    <title>Chef's Canvas - Live Race Leaderboard</title>
     <style>
         :root {
             --primary: #d4af37;
@@ -169,18 +169,19 @@
             font-size: 0.9rem;
         }
 
-        .modal {
-            display: none;
+        .modal, .name-modal {
+            display: flex;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.95);
             justify-content: center;
             align-items: center;
             flex-direction: column;
             gap: 15px;
+            z-index: 100;
         }
 
         .modal-content {
@@ -228,14 +229,23 @@
 
     <div class="sidebar">
         <div class="leaderboard">
-            <h3>Top 5 Master Chefs</h3>
+            <h3>Live Master Chefs Race</h3>
             <div id="leaderboard-list">
             </div>
         </div>
     </div>
 </div>
 
-<div id="win-modal" class="modal">
+<div id="name-modal" class="name-modal">
+    <div class="modal-content">
+        <h2 style="color: var(--primary);">Welcome to Chef's Canvas</h2>
+        <p>Enter your chef name to join the live race:</p>
+        <input type="text" id="player-name-input" placeholder="Your Chef Name" style="margin-bottom: 15px; width: 80%; text-align: center; font-size: 1.1rem; padding: 10px;">
+        <button onclick="registerPlayer()" style="width: 200px;">Start Cooking</button>
+    </div>
+</div>
+
+<div id="win-modal" class="modal" style="display: none;">
     <div class="modal-content">
         <h2 style="color: #2ed573;" id="win-modal-title">🎉 Dish Complete! 🎉</h2>
         <p>Score: <span id="win-score">0</span></p>
@@ -243,7 +253,7 @@
     </div>
 </div>
 
-<div id="lose-modal" class="modal">
+<div id="lose-modal" class="modal" style="display: none;">
     <div class="modal-content">
         <h2 style="color: #ff4757;">Game Over!</h2>
         <p>Out of attempts! The remaining ingredients were:</p>
@@ -314,14 +324,15 @@
     let score = 0;
     let foundIngredients = [];
     let guessesMade = [];
-    let localLeaderboard = JSON.parse(localStorage.getItem('michelin_ingredient_leaderboard')) || [];
+    let playerName = "";
+    let playerDocId = null;
 
     // Expose functions to the window object so `onclick` works
     window.submitGuess = submitGuess;
     window.nextLevel = nextLevel;
     window.resetGame = resetGame;
+    window.registerPlayer = registerPlayer;
 
-    // Fisher-Yates Shuffle Algorithm
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -336,6 +347,39 @@
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/[-\s']/g, "");
+    }
+
+    // --- Name Registration ---
+    async function registerPlayer() {
+        const nameInput = document.getElementById('player-name-input').value.trim();
+        if (!nameInput) {
+            alert("Please enter a name!");
+            return;
+        }
+
+        playerName = nameInput;
+        document.getElementById('name-modal').style.display = 'none';
+
+        try {
+            // Initialize player inside Firestore Database
+            const docRef = await db.collection("leaderboard").add({
+                name: playerName,
+                score: 0,
+                level: 1,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            playerDocId = docRef.id;
+
+            // Start Game
+            dishes = shuffleArray([...dishesDatabase]);
+            loadDish(0);
+            startLiveLeaderboard();
+        } catch (e) {
+            console.error("Error creating player entry: ", e);
+            alert("Could not connect to database, falling back to local leaderboard!");
+            dishes = shuffleArray([...dishesDatabase]);
+            loadDish(0);
+        }
     }
 
     function loadDish(index) {
@@ -356,8 +400,6 @@
         document.getElementById('guess-input').value = '';
         document.getElementById('win-modal').style.display = 'none';
         document.getElementById('lose-modal').style.display = 'none';
-
-        updateLeaderboardDisplay();
     }
 
     function renderFoundIngredients() {
@@ -392,7 +434,7 @@
             return;
         }
 
-        // Check if singular/plural matches by testing both forms
+        // Check if singular/plural matches
         const matchedIngredient = currentDish.ingredients.find(ing => {
             const normIng = normalizeString(ing);
             return (
@@ -413,6 +455,7 @@
             score += 20;
             document.getElementById('score-display').textContent = score;
             renderFoundIngredients();
+            updateLiveScore(); // Send points live!
         }
 
         if (foundIngredients.length === currentDish.ingredients.length) {
@@ -436,6 +479,7 @@
             document.getElementById('win-modal-title').textContent = "🎉 Dish Complete! 🎉";
             document.getElementById('next-btn-text').textContent = "Next Dish";
             document.getElementById('win-modal').style.display = 'flex';
+            checkLeaderboard(); // Update score status and continue
         }
     }
 
@@ -446,123 +490,53 @@
         checkLeaderboard();
     }
 
-    async function checkLeaderboard() {
-        if (score > 0) {
-            const currentLevel = Math.floor(currentDishIndex / 4) + 1;
+    async function updateLiveScore() {
+        if (playerDocId) {
             try {
-                const snapshot = await db.collection("leaderboard").orderBy("level", "desc").orderBy("score", "desc").limit(20).get();
-                let array = [];
-                snapshot.forEach((doc) => {
-                    array.push(doc.data());
+                const currentLevel = Math.floor(currentDishIndex / 4) + 1;
+                await db.collection("leaderboard").doc(playerDocId).update({
+                    score: score,
+                    level: currentLevel
                 });
-
-                let minScore = array.length > 0 ? array[array.length - 1].score : 0;
-
-                if (array.length < 5 || score > minScore) {
-                    setTimeout(() => {
-                        const playerName = prompt("🎉 High Score Reached! Enter your name for the leaderboard:");
-                        if (playerName && playerName.trim() !== "") {
-                            saveScoreToFirebase(playerName.trim(), score, currentLevel);
-                        }
-                    }, 600);
-                }
             } catch (e) {
-                // Fallback to local storage
-                let minScore = 0;
-                if (localLeaderboard.length >= 5) {
-                    minScore = localLeaderboard[localLeaderboard.length - 1].score;
-                }
-                if (localLeaderboard.length < 5 || score > minScore) {
-                    setTimeout(() => {
-                        const playerName = prompt("🎉 High Score Reached! Enter your name for the leaderboard:");
-                        if (playerName && playerName.trim() !== "") {
-                            localLeaderboard.push({ name: playerName.trim(), score: score, level: currentLevel });
-                            localLeaderboard.sort((a, b) => b.level - a.level || b.score - a.score);
-                            localLeaderboard = localLeaderboard.slice(0, 5);
-                            localStorage.setItem('michelin_ingredient_leaderboard', JSON.stringify(localLeaderboard));
-                            updateLeaderboardDisplay();
-                        }
-                    }, 600);
-                }
+                // Fail quietly, local storage can still hold temp data
             }
         }
     }
 
-    async function saveScoreToFirebase(name, score, level) {
-        try {
-            await db.collection("leaderboard").add({
-                name: name,
-                score: score,
-                level: level,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            updateLeaderboardDisplay();
-        } catch (e) {
-            console.error("Error adding score: ", e);
-        }
+    function checkLeaderboard() {
+        // Player standings are automatically updated live.
+        // This function exists for display & final event notifications
+        updateLiveScore();
     }
 
-    async function updateLeaderboardDisplay() {
-        try {
-            const snapshot = await db.collection("leaderboard").orderBy("level", "desc").orderBy("score", "desc").limit(20).get();
-            const listElement = document.getElementById('leaderboard-list');
-            listElement.innerHTML = '';
+    function startLiveLeaderboard() {
+        db.collection("leaderboard")
+            .orderBy("level", "desc")
+            .orderBy("score", "desc")
+            .limit(20)
+            .onSnapshot(snapshot => {
+                const listElement = document.getElementById('leaderboard-list');
+                listElement.innerHTML = '';
 
-            if (snapshot.empty) {
-                listElement.innerHTML = "<li>No entries yet. Be the first!</li>";
-                return;
-            }
+                if (snapshot.empty) {
+                    listElement.innerHTML = "<li>No entries yet. Be the first!</li>";
+                    return;
+                }
 
-            let grouped = {};
-            snapshot.forEach((doc) => {
-                const player = doc.data();
-                const level = player.level || 1;
-                if (!grouped[level]) grouped[level] = [];
-                grouped[level].push(player);
-            });
-
-            const sortedLevels = Object.keys(grouped).sort((a, b) => b - a);
-
-            sortedLevels.forEach(level => {
-                grouped[level].sort((a, b) => b.score - a.score);
-
-                let levelDiv = document.createElement('div');
-                levelDiv.style.color = 'var(--primary)';
-                levelDiv.style.marginTop = '10px';
-                levelDiv.style.marginBottom = '5px';
-                levelDiv.style.fontWeight = 'bold';
-                levelDiv.textContent = `Level ${level}`;
-                listElement.appendChild(levelDiv);
-
-                let ol = document.createElement('ol');
-                ol.style.margin = '0';
-                ol.style.paddingLeft = '20px';
-
-                grouped[level].forEach(player => {
-                    let li = document.createElement('li');
-                    li.innerHTML = `<b>${escapeHtml(player.name)}</b>: ${player.score} pts`;
-                    ol.appendChild(li);
-                });
-
-                listElement.appendChild(ol);
-            });
-
-        } catch (e) {
-            const listElement = document.getElementById('leaderboard-list');
-            listElement.innerHTML = '';
-
-            if (localLeaderboard.length === 0) {
-                listElement.innerHTML = "<li>No entries yet. Be the first!</li>";
-            } else {
                 let grouped = {};
-                localLeaderboard.forEach(player => {
+                snapshot.forEach((doc) => {
+                    const player = doc.data();
                     const level = player.level || 1;
                     if (!grouped[level]) grouped[level] = [];
                     grouped[level].push(player);
                 });
 
                 const sortedLevels = Object.keys(grouped).sort((a, b) => b - a);
+
                 sortedLevels.forEach(level => {
+                    grouped[level].sort((a, b) => b.score - a.score);
+
                     let levelDiv = document.createElement('div');
                     levelDiv.style.color = 'var(--primary)';
                     levelDiv.style.marginTop = '10px';
@@ -580,10 +554,10 @@
                         li.innerHTML = `<b>${escapeHtml(player.name)}</b>: ${player.score} pts`;
                         ol.appendChild(li);
                     });
+
                     listElement.appendChild(ol);
                 });
-            }
-        }
+            });
     }
 
     function nextLevel() {
@@ -598,22 +572,16 @@
     function resetGame() {
         score = 0;
         currentDishIndex = 0;
-        // Re-shuffle the array
-        dishes = shuffleArray([...dishesDatabase]);
-        loadDish(0);
+        // Create a new entry for re-race
+        playerName = "";
+        playerDocId = null;
+        document.getElementById('name-modal').style.display = 'flex';
+        document.getElementById('player-name-input').value = "";
     }
 
     function escapeHtml(string) {
         return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
-
-    // Initialize the game
-    window.onload = () => {
-        // Initialize the array by making a copy and shuffling
-        dishes = shuffleArray([...dishesDatabase]);
-        loadDish(0);
-        updateLeaderboardDisplay();
-    };
 </script>
 </body>
 </html>
