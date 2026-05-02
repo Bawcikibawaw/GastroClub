@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chef's Canvas - Live Race Leaderboard</title>
+    <title>Chef's Canvas - Turkish Edition</title>
     <style>
         :root {
-            --primary: #d4af37;
-            --bg: #1a1a1a;
-            --surface: #2a2a2a;
-            --text: #ffffff;
-            --text-secondary: #aaaaaa;
+            --primary: #7A1E1E; /* Vişne Çürüğü / Kırmızı */
+            --bg: #EFE6D2;      /* Krem Arka Plan */
+            --surface: #e5dbc1;  /* Kart Arka Planı (Bir tık koyu krem) */
+            --text: #2a2a2a;    /* Koyu Metin */
+            --text-secondary: #5a5a5a;
+            --white: #ffffff;
         }
 
         body {
@@ -19,18 +20,20 @@
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box;
         }
 
-        header { text-align: center; margin-bottom: 20px; }
+        header { text-align: center; margin-bottom: 20px; width: 100%; max-width: 900px;}
+
         h1 { color: var(--primary); margin: 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
         p { color: var(--text-secondary); }
 
         .game-container { display: flex; flex-direction: row; gap: 30px; max-width: 900px; width: 100%; }
         .main-game, .sidebar {
             background-color: var(--surface); padding: 25px; border-radius: 10px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); flex: 1; display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 4px 12px rgba(122, 30, 30, 0.15); flex: 1; display: flex; flex-direction: column; align-items: center;
+            border: 1px solid rgba(122, 30, 30, 0.1);
         }
 
         .dish-card {
-            background: #333; padding: 15px; border-radius: 8px; width: 100%; margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.3); padding: 15px; border-radius: 8px; width: 100%; margin-bottom: 20px;
             text-align: center; border-left: 4px solid var(--primary);
         }
 
@@ -38,29 +41,48 @@
         .controls { width: 100%; display: flex; flex-direction: column; gap: 15px; }
 
         input[type="text"] {
-            padding: 12px; border: 1px solid #444; border-radius: 6px;
-            background-color: #333; color: var(--text); font-size: 1rem; width: 100%; box-sizing: border-box;
+            padding: 12px; border: 2px solid #d4c8b0; border-radius: 6px;
+            background-color: var(--white); color: var(--text); font-size: 1rem; width: 100%; box-sizing: border-box;
         }
 
+        input[type="text"]:focus { outline: none; border-color: var(--primary); }
+
         button {
-            padding: 12px; background-color: var(--primary); color: #000; border: none;
+            padding: 12px; background-color: var(--primary); color: var(--white); border: none;
             border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%;
         }
 
-        button:hover { background-color: #f7d06a; transform: translateY(-2px); }
+        button:hover { background-color: #5a1515; transform: translateY(-2px); }
 
-        .game-info { display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary); }
+        .game-info { display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary); font-weight: bold;}
         .ingredient-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; width: 100%; justify-content: center; }
-        .ingredient-tag { background: #444; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; color: var(--text); }
-        .ingredient-tag.found { background: #2ed573; color: #000; font-weight: bold; }
+
+        .ingredient-tag {
+            background: #d4c8b0; padding: 6px 12px; border-radius: 15px;
+            font-size: 0.85rem; color: var(--text-secondary); font-weight: bold;
+        }
+        .ingredient-tag.found { background: var(--primary); color: var(--white); }
+
+        /* Footer Language Toggle */
+        footer { margin-top: auto; padding: 20px; width: 100%; text-align: center; }
+        .lang-toggle {
+            padding: 10px 20px; background: var(--surface); border: 2px solid var(--primary);
+            color: var(--primary); cursor: pointer; border-radius: 25px; font-weight: bold; transition: 0.3s;
+        }
+        .lang-toggle:hover { background: var(--primary); color: var(--white); }
 
         .modal, .name-modal {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.95); justify-content: center; align-items: center;
+            background-color: rgba(239, 230, 210, 0.95); justify-content: center; align-items: center;
             flex-direction: column; gap: 15px; z-index: 100;
         }
 
-        .modal-content { background-color: var(--surface); padding: 40px; border-radius: 10px; text-align: center; border: 1px solid var(--primary); }
+        .modal-content {
+            background-color: var(--surface); padding: 40px; border-radius: 10px;
+            text-align: center; border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        #leaderboard-list b { color: var(--primary); }
 
         @media (max-width: 768px) { .game-container { flex-direction: column; } }
     </style>
@@ -68,64 +90,66 @@
 <body>
 
 <header>
-    <h1>Chef's Canvas</h1>
-    <p>Guess all the ingredients of the Michelin-star dish!</p>
+    <h1 id="ui-title">Chef's Canvas</h1>
+    <p id="ui-subtitle">Guess the ingredients!</p>
 </header>
 
 <div class="game-container">
     <div class="main-game">
         <div class="dish-card">
-            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Dish Name</p>
+            <p id="ui-dish-label" style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Dish Name</p>
             <h2 class="dish-title" id="dish-name-display">...</h2>
         </div>
 
         <div class="game-info">
-            <div>Level: <span id="level-display">1</span></div>
-            <div>Attempts Left: <span id="tries-display">0</span></div>
-            <div>Score: <span id="score-display">0</span></div>
+            <div><span id="ui-level">Level</span>: <span id="level-display">1</span></div>
+            <div><span id="ui-tries">Attempts</span>: <span id="tries-display">0</span></div>
+            <div><span id="ui-score">Score</span>: <span id="score-display">0</span></div>
         </div>
 
         <div class="ingredient-list" id="found-ingredients-display"></div>
 
         <div class="controls">
-            <input type="text" id="guess-input" placeholder="Type an ingredient (e.g. truffle)...">
-            <button onclick="submitGuess()">Submit Ingredient</button>
+            <input type="text" id="guess-input" placeholder="...">
+            <button id="ui-submit-btn" onclick="submitGuess()">Submit</button>
         </div>
     </div>
 
     <div class="sidebar">
         <div class="leaderboard">
-            <h3>Live Master Chefs Race</h3>
-            <div id="leaderboard-list">
-                <p style="font-size: 0.8rem; color: #888;">Connecting to kitchen...</p>
-            </div>
+            <h3 id="ui-leaderboard-title">Live Race</h3>
+            <div id="leaderboard-list"></div>
         </div>
     </div>
 </div>
 
+<footer>
+    <button class="lang-toggle" onclick="toggleLanguage()">TR / EN</button>
+</footer>
+
 <div id="name-modal" class="name-modal">
     <div class="modal-content">
-        <h2 style="color: var(--primary);">Welcome to Chef's Canvas</h2>
-        <p>Enter your chef name to join the live race:</p>
-        <input type="text" id="player-name-input" placeholder="Your Chef Name" style="margin-bottom: 15px; width: 80%; text-align: center; font-size: 1.1rem; padding: 10px;">
-        <button onclick="registerPlayer()" style="width: 200px;">Start Cooking</button>
+        <h2 id="ui-welcome-title" style="color: var(--primary);">Welcome</h2>
+        <p id="ui-welcome-text">Enter your chef name:</p>
+        <input type="text" id="player-name-input" placeholder="..." style="margin-bottom: 15px; width: 80%; text-align: center; font-size: 1.1rem; padding: 10px;">
+        <button id="ui-start-btn" onclick="registerPlayer()" style="width: 200px;">Start</button>
     </div>
 </div>
 
 <div id="win-modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <h2 style="color: #2ed573;">🎉 Dish Complete! 🎉</h2>
-        <p>Score: <span id="win-score">0</span></p>
-        <button onclick="nextLevel()" style="width: 200px; margin-top: 15px;">Next Dish</button>
+        <h2 id="ui-win-title" style="color: #2ed573;">🎉 Dish Complete! 🎉</h2>
+        <p><span id="ui-win-score-label">Score</span>: <span id="win-score">0</span></p>
+        <button id="ui-next-btn" onclick="nextLevel()" style="width: 200px; margin-top: 15px;">Next Dish</button>
     </div>
 </div>
 
 <div id="lose-modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <h2 style="color: #ff4757;">Game Over!</h2>
-        <p>Out of attempts! The remaining ingredients were:</p>
+        <h2 id="ui-lose-title" style="color: var(--primary);">Game Over!</h2>
+        <p id="ui-lose-text">The ingredients were:</p>
         <p id="correct-ingredients-display" style="color: var(--primary); font-weight: bold;"></p>
-        <button onclick="resetGame()" style="width: 200px; margin-top: 15px;">Try Again</button>
+        <button id="ui-try-again-btn" onclick="resetGame()" style="width: 200px; margin-top: 15px;">Try Again</button>
     </div>
 </div>
 
@@ -146,40 +170,75 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    const translations = {
+        en: {
+            title: "Chef's Canvas", subtitle: "Guess the ingredients! (TR or EN supported)",
+            dishLabel: "Dish Name", level: "Level", tries: "Attempts", score: "Score",
+            submit: "Submit", leaderboard: "Live Race",
+            welcomeTitle: "Welcome", welcomeText: "Enter your chef name:",
+            start: "Start", win: "🎉 Dish Complete! 🎉", next: "Next Dish",
+            lose: "Game Over!", loseText: "The ingredients were:", tryAgain: "Try Again",
+            inputPlaceholder: "Type an ingredient...", namePlaceholder: "Your Name"
+        },
+        tr: {
+            title: "Şefin Tuvali", subtitle: "Malzemeleri tahmin et! (TR veya EN yazabilirsin)",
+            dishLabel: "Yemek Adı", level: "Seviye", tries: "Hak", score: "Skor",
+            submit: "Gönder", leaderboard: "Canlı Yarış",
+            welcomeTitle: "Hoş Geldin", welcomeText: "Şef adını gir:",
+            start: "Başla", win: "🎉 Yemek Tamamlandı! 🎉", next: "Sıradaki Yemek",
+            lose: "Oyun Bitti!", loseText: "Malzemeler şunlardı:", tryAgain: "Tekrar Dene",
+            inputPlaceholder: "Malzeme yaz...", namePlaceholder: "Adınız"
+        }
+    };
+
+    const ingredientMap = {
+        "seker": "sugar", "tereyagi": "butter", "sut": "milk", "un": "flour", "yumurta": "egg",
+        "domates": "tomato", "biber": "pepper", "sogan": "onion", "sarimsak": "garlic", "et": "meat",
+        "kiyma": "minced meat", "pirinc": "rice", "bulgur": "bulgur", "salca": "paste", "yogurt": "yogurt",
+        "patlican": "eggplant", "patates": "potato", "havuc": "carrot", "zeytinyagi": "olive oil",
+        "tuz": "salt", "maydonoz": "parsley", "nane": "mint", "kekik": "thyme", "fistik": "pistachio",
+        "ceviz": "walnut", "serbet": "syrup", "hamur": "dough", "yufka": "phyllo", "peynir": "cheese",
+        "doner": "doner", "pide": "pita", "mercimek": "lentil", "kuzu eti": "lamb", "dana eti": "beef",
+        "kasar peyniri": "kashar", "lavas": "tortilla", "nisasta": "starch", "susam": "sesame",
+        "pekmez": "molasses", "bal": "honey", "isot": "isot", "nar eksisi": "pomegranate molasses",
+        "pul biber": "red pepper flakes", "karabiber": "black pepper", "enginar": "artichoke",
+        "bezelye": "peas", "fasulye": "beans", "irmik": "semolina", "limon": "lemon", "kaymak": "cream"
+    };
+
     const dishesDatabase = [
-        { "name": "Truffle Lobster Tartare", "ingredients": ["truffle", "lobster", "chive", "caviar"], "triesLimit": 6 },
-        { "name": "Gold Leaf Wagyu", "ingredients": ["wagyu", "gold leaf", "microgreens", "demi-glace"], "triesLimit": 5 },
-        { "name": "Vanilla Orchid Espuma", "ingredients": ["vanilla", "orchid", "matcha", "mascarpone"], "triesLimit": 8 },
-        { "name": "Caviar Blini", "ingredients": ["caviar", "crème fraîche", "buckwheat", "chive"], "triesLimit": 6 },
-        { "name": "Foie Gras Torchon", "ingredients": ["foie gras", "brioche", "fig jam", "sea salt"], "triesLimit": 4 },
-        { "name": "Black Truffle Risotto", "ingredients": ["arborio rice", "parmesan", "black truffle", "butter"], "triesLimit": 5 },
-        { "name": "Saffron Bouillabaisse", "ingredients": ["saffron", "sea bass", "fennel", "tomato"], "triesLimit": 6 },
-        { "name": "Seared Scallops with Pancetta", "ingredients": ["scallops", "pancetta", "pea purée", "lemon"], "triesLimit": 6 },
-        { "name": "Duck Confit", "ingredients": ["duck leg", "potato", "garlic", "thyme"], "triesLimit": 5 },
-        { "name": "Beef Wellington", "ingredients": ["beef tenderloin", "puff pastry", "mushroom duxelles", "prosciutto"], "triesLimit": 3 },
-        { "name": "Lobster Bisque", "ingredients": ["lobster", "cream", "sherry", "tarragon"], "triesLimit": 5 },
-        { "name": "Rack of Lamb", "ingredients": ["lamb", "rosemary", "garlic", "dijon"], "triesLimit": 4 },
-        { "name": "Escargot de Bourgogne", "ingredients": ["snails", "garlic", "parsley", "butter"], "triesLimit": 7 },
-        { "name": "Oysters Mignonette", "ingredients": ["oysters", "shallot", "red wine vinegar", "chives"], "triesLimit": 8 },
-        { "name": "Coq au Vin", "ingredients": ["chicken", "red wine", "bacon", "mushrooms"], "triesLimit": 6 },
-        { "name": "Mushroom Velouté", "ingredients": ["porcini", "cream", "truffle oil", "chives"], "triesLimit": 7 },
-        { "name": "Carpaccio di Manzo", "ingredients": ["beef", "arugula", "parmesan", "olive oil"], "triesLimit": 8 },
-        { "name": "Chateaubriand", "ingredients": ["beef", "shallot", "red wine", "peppercorn"], "triesLimit": 5 },
-        { "name": "Panna Cotta", "ingredients": ["cream", "vanilla", "raspberry", "gelatin"], "triesLimit": 8 },
-        { "name": "Crème Brûlée", "ingredients": ["cream", "egg yolk", "sugar", "vanilla"], "triesLimit": 8 },
-        { "name": "Chocolate Soufflé", "ingredients": ["dark chocolate", "eggs", "sugar", "butter"], "triesLimit": 5 },
-        { "name": "Tiramisu", "ingredients": ["mascarpone", "ladyfingers", "espresso", "cocoa"], "triesLimit": 8 },
-        { "name": "Matcha Mille Crêpe", "ingredients": ["matcha", "cream", "crêpes", "sugar"], "triesLimit": 6 },
-        { "name": "Lump Crab Cake", "ingredients": ["crab", "mayonnaise", "mustard", "breadcrumbs"], "triesLimit": 6 },
-        { "name": "Seabass Ceviche", "ingredients": ["sea bass", "lime", "red onion", "cilantro"], "triesLimit": 8 },
-        { "name": "Andalusian Gazpacho", "ingredients": ["tomato", "cucumber", "bell pepper", "olive oil"], "triesLimit": 9 },
-        { "name": "Ahi Tuna Tartare", "ingredients": ["tuna", "avocado", "soy sauce", "sesame"], "triesLimit": 6 },
-        { "name": "Classic Ratatouille", "ingredients": ["eggplant", "zucchini", "bell pepper", "tomato"], "triesLimit": 7 },
-        { "name": "Quiche Lorraine", "ingredients": ["bacon", "gruyère", "cream", "eggs"], "triesLimit": 8 },
-        { "name": "Gorgonzola Gnocchi", "ingredients": ["potato", "gorgonzola", "cream", "walnuts"], "triesLimit": 6 },
-        { "name": "Smoked Salmon Tartine", "ingredients": ["smoked salmon", "capers", "dill", "cream cheese"], "triesLimit": 9 },
-        { "name": "Venison Carpaccio", "ingredients": ["venison", "juniper", "lingonberry", "microgreens"], "triesLimit": 4 },
-        { "name": "Classic Baked Alaska", "ingredients": ["sponge cake", "meringue", "strawberry ice cream"], "triesLimit": 5 }
+        { "name": "İskender Kebap", "ingredients": ["doner", "pide", "yogurt", "tereyagi", "domates"], "triesLimit": 6 },
+        { "name": "Mantı", "ingredients": ["hamur", "kiyma", "yogurt", "sarimsak", "tereyagi", "pul biber"], "triesLimit": 7 },
+        { "name": "Baklava", "ingredients": ["yufka", "fistik", "seker", "tereyagi", "serbet"], "triesLimit": 5 },
+        { "name": "Lahmacun", "ingredients": ["hamur", "kiyma", "sogan", "sarimsak", "maydonoz"], "triesLimit": 6 },
+        { "name": "Menemen", "ingredients": ["yumurta", "domates", "biber", "sogan", "zeytinyagi"], "triesLimit": 6 },
+        { "name": "Sütlaç", "ingredients": ["sut", "pirinc", "seker", "nisasta", "yumurta"], "triesLimit": 5 },
+        { "name": "Karnıyarık", "ingredients": ["patlican", "kiyma", "sogan", "domates", "biber", "sarimsak"], "triesLimit": 6 },
+        { "name": "Mercimek Çorbası", "ingredients": ["mercimek", "sogan", "havuc", "patates", "salca"], "triesLimit": 6 },
+        { "name": "Hünkar Beğendi", "ingredients": ["kuzu eti", "patlican", "sut", "un", "tereyagi"], "triesLimit": 6 },
+        { "name": "Yaprak Sarma", "ingredients": ["pirinc", "sogan", "zeytinyagi", "fistik", "nane"], "triesLimit": 7 },
+        { "name": "Su Böreği", "ingredients": ["hamur", "peynir", "maydonoz", "tereyagi", "yumurta"], "triesLimit": 6 },
+        { "name": "Adana Kebap", "ingredients": ["kiyma", "pul biber", "tuz"], "triesLimit": 4 },
+        { "name": "Künefe", "ingredients": ["peynir", "tereyagi", "serbet", "fistik"], "triesLimit": 5 },
+        { "name": "Çiğ Köfte", "ingredients": ["bulgur", "isot", "salca", "sogan", "nar eksisi"], "triesLimit": 7 },
+        { "name": "Zeytinyağlı Enginar", "ingredients": ["enginar", "bezelye", "havuc", "patates", "zeytinyagi", "limon"], "triesLimit": 6 },
+        { "name": "Kuru Fasulye", "ingredients": ["fasulye", "sogan", "salca", "et"], "triesLimit": 5 },
+        { "name": "İçli Köfte", "ingredients": ["bulgur", "kiyma", "ceviz", "sogan"], "triesLimit": 5 },
+        { "name": "Kayseri Yağlaması", "ingredients": ["lavas", "kiyma", "sogan", "domates", "yogurt"], "triesLimit": 6 },
+        { "name": "Simit", "ingredients": ["un", "susam", "pekmez", "su"], "triesLimit": 5 },
+        { "name": "Kuzu Tandır", "ingredients": ["kuzu eti", "kekik", "sarimsak", "tuz"], "triesLimit": 4 },
+        { "name": "Ali Nazik", "ingredients": ["kuzu eti", "patlican", "yogurt", "sarimsak", "tereyagi"], "triesLimit": 6 },
+        { "name": "Beyti Kebap", "ingredients": ["kiyma", "lavas", "yogurt", "domates", "tereyagi"], "triesLimit": 7 },
+        { "name": "Cağ Kebabı", "ingredients": ["kuzu eti", "sogan", "karabiber", "tuz"], "triesLimit": 4 },
+        { "name": "Tarhana Çorbası", "ingredients": ["yogurt", "un", "domates", "biber", "sarimsak"], "triesLimit": 6 },
+        { "name": "Kadınbudu Köfte", "ingredients": ["kiyma", "pirinc", "sogan", "yumurta", "un"], "triesLimit": 6 },
+        { "name": "Lokum", "ingredients": ["seker", "nisasta", "su", "limon"], "triesLimit": 5 },
+        { "name": "Ezogelin Çorbası", "ingredients": ["mercimek", "bulgur", "pirinc", "sogan", "nane"], "triesLimit": 6 },
+        { "name": "Şöbiyet", "ingredients": ["yufka", "kaymak", "fistik", "serbet", "tereyagi"], "triesLimit": 6 },
+        { "name": "Büryan", "ingredients": ["kuzu eti", "pide", "tuz"], "triesLimit": 3 },
+        { "name": "Keşkek", "ingredients": ["et", "tereyagi", "pul biber"], "triesLimit": 3 },
+        { "name": "Tas Kebabı", "ingredients": ["dana eti", "patates", "sogan", "domates", "sarimsak"], "triesLimit": 6 },
+        { "name": "Şekerpare", "ingredients": ["un", "irmik", "yumurta", "tereyagi", "seker", "serbet"], "triesLimit": 6 },
+        { "name": "İmam Bayıldı", "ingredients": ["patlican", "sogan", "sarimsak", "domates", "zeytinyagi"], "triesLimit": 5 }
     ];
 
     let dishes = [];
@@ -188,45 +247,59 @@
     let score = 0;
     let foundIngredients = [];
     let guessesMade = [];
+    let currentLang = 'en';
     let playerName = "";
     let playerDocId = null;
 
-    window.submitGuess = submitGuess;
-    window.nextLevel = nextLevel;
-    window.resetGame = resetGame;
-    window.registerPlayer = registerPlayer;
+    function toggleLanguage() {
+        currentLang = currentLang === 'en' ? 'tr' : 'en';
+        updateUI();
+    }
 
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
+    function updateUI() {
+        const t = translations[currentLang];
+        document.getElementById('ui-title').textContent = t.title;
+        document.getElementById('ui-subtitle').textContent = t.subtitle;
+        document.getElementById('ui-dish-label').textContent = t.dishLabel;
+        document.getElementById('ui-level').textContent = t.level;
+        document.getElementById('ui-tries').textContent = t.tries;
+        document.getElementById('ui-score').textContent = t.score;
+        document.getElementById('ui-submit-btn').textContent = t.submit;
+        document.getElementById('ui-leaderboard-title').textContent = t.leaderboard;
+        document.getElementById('ui-welcome-title').textContent = t.welcomeTitle;
+        document.getElementById('ui-welcome-text').textContent = t.welcomeText;
+        document.getElementById('ui-start-btn').textContent = t.start;
+        document.getElementById('ui-win-title').textContent = t.win;
+        document.getElementById('ui-win-score-label').textContent = t.score;
+        document.getElementById('ui-next-btn').textContent = t.next;
+        document.getElementById('ui-lose-title').textContent = t.lose;
+        document.getElementById('ui-lose-text').textContent = t.loseText;
+        document.getElementById('ui-try-again-btn').textContent = t.tryAgain;
+        document.getElementById('guess-input').placeholder = t.inputPlaceholder;
+        document.getElementById('player-name-input').placeholder = t.namePlaceholder;
+        renderFoundIngredients();
     }
 
     function normalizeString(str) {
-        return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[-\s']/g, "");
+        let map = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'İ': 'i' };
+        return str.toLowerCase().normalize("NFD").replace(/[çğıöşüİ]/g, m => map[m])
+            .replace(/[\u0300-\u036f]/g, "").replace(/[-\s']/g, "");
     }
 
     async function registerPlayer() {
         const nameInput = document.getElementById('player-name-input').value.trim();
-        if (!nameInput) { alert("Please enter a name!"); return; }
-
+        if (!nameInput) return;
         playerName = nameInput;
         document.getElementById('name-modal').style.display = 'none';
-
         try {
             const docRef = await db.collection("leaderboard").add({
                 name: playerName, score: 0, level: 1, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             playerDocId = docRef.id;
-            dishes = shuffleArray([...dishesDatabase]);
+            dishes = [...dishesDatabase].sort(() => Math.random() - 0.5);
             loadDish(0);
             startLiveLeaderboard();
-        } catch (e) {
-            console.error("Firebase Connection Error: ", e);
-            alert("Check your Firebase Rules!");
-        }
+        } catch (e) { console.error(e); }
     }
 
     function loadDish(index) {
@@ -246,31 +319,38 @@
     function renderFoundIngredients() {
         const container = document.getElementById('found-ingredients-display');
         container.innerHTML = '';
+        if (!dishes[currentDishIndex]) return;
         dishes[currentDishIndex].ingredients.forEach(ing => {
             const tag = document.createElement('div');
             tag.className = 'ingredient-tag' + (foundIngredients.includes(ing) ? ' found' : '');
-            tag.textContent = foundIngredients.includes(ing) ? ing.toUpperCase() : '???';
+            let display = '???';
+            if (foundIngredients.includes(ing)) {
+                display = (currentLang === 'en' && ingredientMap[ing]) ? ingredientMap[ing] : ing;
+            }
+            tag.textContent = display.toUpperCase();
             container.appendChild(tag);
         });
     }
 
     function submitGuess() {
         const input = document.getElementById('guess-input').value.trim();
-        if (!input) return;
-        const norm = normalizeString(input);
-        if (guessesMade.includes(norm)) { alert("Already guessed!"); return; }
+        if (!input || !dishes[currentDishIndex]) return;
+        const normInput = normalizeString(input);
+        if (guessesMade.includes(normInput)) return;
 
-        const match = dishes[currentDishIndex].ingredients.find(ing => {
-            const n = normalizeString(ing);
-            return n===norm || n===norm+'s' || norm===n+'s' || n===norm+'es' || norm===n+'es';
+        const matched = dishes[currentDishIndex].ingredients.find(ing => {
+            const normTR = normalizeString(ing);
+            const normEN = ingredientMap[ing] ? normalizeString(ingredientMap[ing]) : "";
+            const check = (val, user) => val === user || val === user+'s' || user === val+'s' || val === user+'lar' || user === val+'lar' || user === val+'ler' || user === val+'ler';
+            return check(normTR, normInput) || (normEN && check(normEN, normInput));
         });
 
-        guessesMade.push(norm);
+        guessesMade.push(normInput);
         attemptsRemaining--;
         document.getElementById('tries-display').textContent = attemptsRemaining;
 
-        if (match && !foundIngredients.includes(match)) {
-            foundIngredients.push(match);
+        if (matched && !foundIngredients.includes(matched)) {
+            foundIngredients.push(matched);
             score += 20;
             document.getElementById('score-display').textContent = score;
             renderFoundIngredients();
@@ -288,7 +368,8 @@
     }
 
     function triggerLose() {
-        document.getElementById('correct-ingredients-display').textContent = dishes[currentDishIndex].ingredients.join(', ').toUpperCase();
+        const list = dishes[currentDishIndex].ingredients.map(ing => (currentLang === 'en' && ingredientMap[ing] ? ingredientMap[ing] : ing).toUpperCase());
+        document.getElementById('correct-ingredients-display').textContent = list.join(', ');
         document.getElementById('lose-modal').style.display = 'flex';
     }
 
@@ -298,44 +379,36 @@
                 await db.collection("leaderboard").doc(playerDocId).update({
                     score: score, level: Math.floor(currentDishIndex / 4) + 1
                 });
-            } catch (e) { console.error("Update failed: ", e); }
+            } catch (e) {}
         }
     }
 
     function startLiveLeaderboard() {
         db.collection("leaderboard").orderBy("level", "desc").orderBy("score", "desc").limit(20)
             .onSnapshot(snapshot => {
-                renderLeaderboard(snapshot);
-            }, err => {
-                console.error("Index missing? Fallback active.", err);
-                db.collection("leaderboard").orderBy("score", "desc").limit(20).onSnapshot(s => renderLeaderboard(s));
+                const list = document.getElementById('leaderboard-list');
+                list.innerHTML = '';
+                let grouped = {};
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    if (!grouped[p.level]) grouped[p.level] = [];
+                    grouped[p.level].push(p);
+                });
+                Object.keys(grouped).sort((a,b)=>b-a).forEach(lvl => {
+                    let div = document.createElement('div');
+                    div.style.color = 'var(--primary)'; div.style.fontWeight='bold'; div.style.marginTop='10px';
+                    div.textContent = `${translations[currentLang].level} ${lvl}`;
+                    list.appendChild(div);
+                    let ol = document.createElement('ol');
+                    ol.style.paddingLeft='20px';
+                    grouped[lvl].sort((a,b)=>b.score-a.score).forEach(p => {
+                        let li = document.createElement('li');
+                        li.innerHTML = `<b>${p.name}</b>: ${p.score} pts`;
+                        ol.appendChild(li);
+                    });
+                    list.appendChild(ol);
+                });
             });
-    }
-
-    function renderLeaderboard(snapshot) {
-        const list = document.getElementById('leaderboard-list');
-        list.innerHTML = '';
-        if (snapshot.empty) { list.innerHTML = "<li>No chefs yet!</li>"; return; }
-        let grouped = {};
-        snapshot.forEach(doc => {
-            const p = doc.data();
-            if (!grouped[p.level]) grouped[p.level] = [];
-            grouped[p.level].push(p);
-        });
-        Object.keys(grouped).sort((a,b)=>b-a).forEach(lvl => {
-            let div = document.createElement('div');
-            div.style.color = 'var(--primary)'; div.style.fontWeight='bold'; div.style.marginTop='10px';
-            div.textContent = `Level ${lvl}`;
-            list.appendChild(div);
-            let ol = document.createElement('ol');
-            ol.style.paddingLeft='20px';
-            grouped[lvl].sort((a,b)=>b.score-a.score).forEach(p => {
-                let li = document.createElement('li');
-                li.innerHTML = `<b>${p.name}</b>: ${p.score} pts`;
-                ol.appendChild(li);
-            });
-            list.appendChild(ol);
-        });
     }
 
     function nextLevel() {
@@ -343,9 +416,9 @@
         else { currentDishIndex++; loadDish(currentDishIndex); }
     }
 
-    function resetGame() {
-        location.reload();
-    }
+    function resetGame() { location.reload(); }
+
+    window.onload = () => { updateUI(); };
 </script>
 </body>
 </html>
