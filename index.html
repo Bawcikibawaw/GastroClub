@@ -316,6 +316,7 @@
     let guessesMade = [];
     let playerName = "";
     let playerDocId = null;
+    let localLeaderboard = JSON.parse(localStorage.getItem('michelin_ingredient_leaderboard')) || [];
 
     // Expose functions to the window object so `onclick` works
     window.submitGuess = submitGuess;
@@ -323,7 +324,6 @@
     window.resetGame = resetGame;
     window.registerPlayer = registerPlayer;
 
-    // Fisher-Yates Shuffle Algorithm
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -426,7 +426,6 @@
             return;
         }
 
-        // Check if singular/plural matches
         const matchedIngredient = currentDish.ingredients.find(ing => {
             const normIng = normalizeString(ing);
             return (
@@ -466,12 +465,12 @@
             document.getElementById('win-modal-title').textContent = "🎉 Game Complete! 🎉";
             document.getElementById('next-btn-text').textContent = "Restart Game";
             document.getElementById('win-modal').style.display = 'flex';
-            checkLeaderboard();
+            updateLiveScore();
         } else {
             document.getElementById('win-modal-title').textContent = "🎉 Dish Complete! 🎉";
             document.getElementById('next-btn-text').textContent = "Next Dish";
             document.getElementById('win-modal').style.display = 'flex';
-            checkLeaderboard();
+            updateLiveScore();
         }
     }
 
@@ -479,7 +478,7 @@
         const currentDish = dishes[currentDishIndex];
         document.getElementById('correct-ingredients-display').textContent = currentDish.ingredients.join(', ').toUpperCase();
         document.getElementById('lose-modal').style.display = 'flex';
-        checkLeaderboard();
+        updateLiveScore();
     }
 
     async function updateLiveScore() {
@@ -503,10 +502,6 @@
                 updateLeaderboardDisplay();
             }
         }
-    }
-
-    function checkLeaderboard() {
-        updateLiveScore();
     }
 
     function startLiveLeaderboard() {
@@ -534,6 +529,7 @@
                 const sortedLevels = Object.keys(grouped).sort((a, b) => b - a);
 
                 sortedLevels.forEach(level => {
+                    // Sort players in this level by score descending
                     grouped[level].sort((a, b) => b.score - a.score);
 
                     let levelDiv = document.createElement('div');
@@ -560,7 +556,6 @@
     }
 
     function nextLevel() {
-        // Hide Modals
         document.getElementById('win-modal').style.display = 'none';
         document.getElementById('lose-modal').style.display = 'none';
 
