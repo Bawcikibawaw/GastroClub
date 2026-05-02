@@ -213,6 +213,7 @@
         </div>
 
         <div class="game-info">
+            <div>Level: <span id="level-display">1</span></div>
             <div>Attempts Left: <span id="tries-display">0</span></div>
             <div>Score: <span id="score-display">0</span></div>
         </div>
@@ -228,8 +229,8 @@
     <div class="sidebar">
         <div class="leaderboard">
             <h3>Top 5 Master Chefs</h3>
-            <ol id="leaderboard-list">
-            </ol>
+            <div id="leaderboard-list">
+            </div>
         </div>
     </div>
 </div>
@@ -271,213 +272,63 @@
     const db = firebase.firestore();
 
     // --- Database of 33 Michelin-Star Dishes ---
-    const dishes = [
-        {
-            "name": "Truffle Lobster Tartare",
-            "ingredients": ["truffle", "lobster", "chive", "caviar"],
-            "difficulty": "Hard",
-            "triesLimit": 6
-        },
-        {
-            "name": "Gold Leaf Wagyu",
-            "ingredients": ["wagyu", "gold leaf", "microgreens", "demi-glace"],
-            "difficulty": "Master",
-            "triesLimit": 5
-        },
-        {
-            "name": "Vanilla Orchid Espuma",
-            "ingredients": ["vanilla", "orchid", "matcha", "mascarpone"],
-            "difficulty": "Medium",
-            "triesLimit": 8
-        },
-        {
-            "name": "Caviar Blini",
-            "ingredients": ["caviar", "crème fraîche", "buckwheat", "chive"],
-            "difficulty": "Medium",
-            "triesLimit": 6
-        },
-        {
-            "name": "Foie Gras Torchon",
-            "ingredients": ["foie gras", "brioche", "fig jam", "sea salt"],
-            "difficulty": "Master",
-            "triesLimit": 4
-        },
-        {
-            "name": "Black Truffle Risotto",
-            "ingredients": ["arborio rice", "parmesan", "black truffle", "butter"],
-            "difficulty": "Hard",
-            "triesLimit": 5
-        },
-        {
-            "name": "Saffron Bouillabaisse",
-            "ingredients": ["saffron", "sea bass", "fennel", "tomato"],
-            "difficulty": "Hard",
-            "triesLimit": 6
-        },
-        {
-            "name": "Seared Scallops with Pancetta",
-            "ingredients": ["scallops", "pancetta", "pea purée", "lemon"],
-            "difficulty": "Medium",
-            "triesLimit": 6
-        },
-        {
-            "name": "Duck Confit",
-            "ingredients": ["duck leg", "potato", "garlic", "thyme"],
-            "difficulty": "Hard",
-            "triesLimit": 5
-        },
-        {
-            "name": "Beef Wellington",
-            "ingredients": ["beef tenderloin", "puff pastry", "mushroom duxelles", "prosciutto"],
-            "difficulty": "Master",
-            "triesLimit": 3
-        },
-        {
-            "name": "Lobster Bisque",
-            "ingredients": ["lobster", "cream", "sherry", "tarragon"],
-            "difficulty": "Hard",
-            "triesLimit": 5
-        },
-        {
-            "name": "Rack of Lamb",
-            "ingredients": ["lamb", "rosemary", "garlic", "dijon"],
-            "difficulty": "Hard",
-            "triesLimit": 4
-        },
-        {
-            "name": "Escargot de Bourgogne",
-            "ingredients": ["snails", "garlic", "parsley", "butter"],
-            "difficulty": "Medium",
-            "triesLimit": 7
-        },
-        {
-            "name": "Oysters Mignonette",
-            "ingredients": ["oysters", "shallot", "red wine vinegar", "chives"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Coq au Vin",
-            "ingredients": ["chicken", "red wine", "bacon", "mushrooms"],
-            "difficulty": "Medium",
-            "triesLimit": 6
-        },
-        {
-            "name": "Mushroom Velouté",
-            "ingredients": ["porcini", "cream", "truffle oil", "chives"],
-            "difficulty": "Medium",
-            "triesLimit": 7
-        },
-        {
-            "name": "Carpaccio di Manzo",
-            "ingredients": ["beef", "arugula", "parmesan", "olive oil"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Chateaubriand",
-            "ingredients": ["beef", "shallot", "red wine", "peppercorn"],
-            "difficulty": "Hard",
-            "triesLimit": 5
-        },
-        {
-            "name": "Panna Cotta",
-            "ingredients": ["cream", "vanilla", "raspberry", "gelatin"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Crème Brûlée",
-            "ingredients": ["cream", "egg yolk", "sugar", "vanilla"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Chocolate Soufflé",
-            "ingredients": ["dark chocolate", "eggs", "sugar", "butter"],
-            "difficulty": "Hard",
-            "triesLimit": 5
-        },
-        {
-            "name": "Tiramisu",
-            "ingredients": ["mascarpone", "ladyfingers", "espresso", "cocoa"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Matcha Mille Crêpe",
-            "ingredients": ["matcha", "cream", "crêpes", "sugar"],
-            "difficulty": "Hard",
-            "triesLimit": 6
-        },
-        {
-            "name": "Lump Crab Cake",
-            "ingredients": ["crab", "mayonnaise", "mustard", "breadcrumbs"],
-            "difficulty": "Medium",
-            "triesLimit": 6
-        },
-        {
-            "name": "Seabass Ceviche",
-            "ingredients": ["sea bass", "lime", "red onion", "cilantro"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Andalusian Gazpacho",
-            "ingredients": ["tomato", "cucumber", "bell pepper", "olive oil"],
-            "difficulty": "Easy",
-            "triesLimit": 9
-        },
-        {
-            "name": "Ahi Tuna Tartare",
-            "ingredients": ["tuna", "avocado", "soy sauce", "sesame"],
-            "difficulty": "Medium",
-            "triesLimit": 6
-        },
-        {
-            "name": "Classic Ratatouille",
-            "ingredients": ["eggplant", "zucchini", "bell pepper", "tomato"],
-            "difficulty": "Easy",
-            "triesLimit": 7
-        },
-        {
-            "name": "Quiche Lorraine",
-            "ingredients": ["bacon", "gruyère", "cream", "eggs"],
-            "difficulty": "Easy",
-            "triesLimit": 8
-        },
-        {
-            "name": "Gorgonzola Gnocchi",
-            "ingredients": ["potato", "gorgonzola", "cream", "walnuts"],
-            "difficulty": "Medium",
-            "triesLimit": 6
-        },
-        {
-            "name": "Smoked Salmon Tartine",
-            "ingredients": ["smoked salmon", "capers", "dill", "cream cheese"],
-            "difficulty": "Easy",
-            "triesLimit": 9
-        },
-        {
-            "name": "Venison Carpaccio",
-            "ingredients": ["venison", "juniper", "lingonberry", "microgreens"],
-            "difficulty": "Master",
-            "triesLimit": 4
-        },
-        {
-            "name": "Classic Baked Alaska",
-            "ingredients": ["sponge cake", "meringue", "strawberry ice cream"],
-            "difficulty": "Hard",
-            "triesLimit": 5
-        }
+    const dishesDatabase = [
+        { "name": "Truffle Lobster Tartare", "ingredients": ["truffle", "lobster", "chive", "caviar"], "difficulty": "Hard", "triesLimit": 6 },
+        { "name": "Gold Leaf Wagyu", "ingredients": ["wagyu", "gold leaf", "microgreens", "demi-glace"], "difficulty": "Master", "triesLimit": 5 },
+        { "name": "Vanilla Orchid Espuma", "ingredients": ["vanilla", "orchid", "matcha", "mascarpone"], "difficulty": "Medium", "triesLimit": 8 },
+        { "name": "Caviar Blini", "ingredients": ["caviar", "crème fraîche", "buckwheat", "chive"], "difficulty": "Medium", "triesLimit": 6 },
+        { "name": "Foie Gras Torchon", "ingredients": ["foie gras", "brioche", "fig jam", "sea salt"], "difficulty": "Master", "triesLimit": 4 },
+        { "name": "Black Truffle Risotto", "ingredients": ["arborio rice", "parmesan", "black truffle", "butter"], "difficulty": "Hard", "triesLimit": 5 },
+        { "name": "Saffron Bouillabaisse", "ingredients": ["saffron", "sea bass", "fennel", "tomato"], "difficulty": "Hard", "triesLimit": 6 },
+        { "name": "Seared Scallops with Pancetta", "ingredients": ["scallops", "pancetta", "pea purée", "lemon"], "difficulty": "Medium", "triesLimit": 6 },
+        { "name": "Duck Confit", "ingredients": ["duck leg", "potato", "garlic", "thyme"], "difficulty": "Hard", "triesLimit": 5 },
+        { "name": "Beef Wellington", "ingredients": ["beef tenderloin", "puff pastry", "mushroom duxelles", "prosciutto"], "difficulty": "Master", "triesLimit": 3 },
+        { "name": "Lobster Bisque", "ingredients": ["lobster", "cream", "sherry", "tarragon"], "difficulty": "Hard", "triesLimit": 5 },
+        { "name": "Rack of Lamb", "ingredients": ["lamb", "rosemary", "garlic", "dijon"], "difficulty": "Hard", "triesLimit": 4 },
+        { "name": "Escargot de Bourgogne", "ingredients": ["snails", "garlic", "parsley", "butter"], "difficulty": "Medium", "triesLimit": 7 },
+        { "name": "Oysters Mignonette", "ingredients": ["oysters", "shallot", "red wine vinegar", "chives"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Coq au Vin", "ingredients": ["chicken", "red wine", "bacon", "mushrooms"], "difficulty": "Medium", "triesLimit": 6 },
+        { "name": "Mushroom Velouté", "ingredients": ["porcini", "cream", "truffle oil", "chives"], "difficulty": "Medium", "triesLimit": 7 },
+        { "name": "Carpaccio di Manzo", "ingredients": ["beef", "arugula", "parmesan", "olive oil"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Chateaubriand", "ingredients": ["beef", "shallot", "red wine", "peppercorn"], "difficulty": "Hard", "triesLimit": 5 },
+        { "name": "Panna Cotta", "ingredients": ["cream", "vanilla", "raspberry", "gelatin"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Crème Brûlée", "ingredients": ["cream", "egg yolk", "sugar", "vanilla"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Chocolate Soufflé", "ingredients": ["dark chocolate", "eggs", "sugar", "butter"], "difficulty": "Hard", "triesLimit": 5 },
+        { "name": "Tiramisu", "ingredients": ["mascarpone", "ladyfingers", "espresso", "cocoa"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Matcha Mille Crêpe", "ingredients": ["matcha", "cream", "crêpes", "sugar"], "difficulty": "Hard", "triesLimit": 6 },
+        { "name": "Lump Crab Cake", "ingredients": ["crab", "mayonnaise", "mustard", "breadcrumbs"], "difficulty": "Medium", "triesLimit": 6 },
+        { "name": "Seabass Ceviche", "ingredients": ["sea bass", "lime", "red onion", "cilantro"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Andalusian Gazpacho", "ingredients": ["tomato", "cucumber", "bell pepper", "olive oil"], "difficulty": "Easy", "triesLimit": 9 },
+        { "name": "Ahi Tuna Tartare", "ingredients": ["tuna", "avocado", "soy sauce", "sesame"], "difficulty": "Medium", "triesLimit": 6 },
+        { "name": "Classic Ratatouille", "ingredients": ["eggplant", "zucchini", "bell pepper", "tomato"], "difficulty": "Easy", "triesLimit": 7 },
+        { "name": "Quiche Lorraine", "ingredients": ["bacon", "gruyère", "cream", "eggs"], "difficulty": "Easy", "triesLimit": 8 },
+        { "name": "Gorgonzola Gnocchi", "ingredients": ["potato", "gorgonzola", "cream", "walnuts"], "difficulty": "Medium", "triesLimit": 6 },
+        { "name": "Smoked Salmon Tartine", "ingredients": ["smoked salmon", "capers", "dill", "cream cheese"], "difficulty": "Easy", "triesLimit": 9 },
+        { "name": "Venison Carpaccio", "ingredients": ["venison", "juniper", "lingonberry", "microgreens"], "difficulty": "Master", "triesLimit": 4 },
+        { "name": "Classic Baked Alaska", "ingredients": ["sponge cake", "meringue", "strawberry ice cream"], "difficulty": "Hard", "triesLimit": 5 }
     ];
 
+    let dishes = [];
     let currentDishIndex = 0;
     let attemptsRemaining = 0;
     let score = 0;
     let foundIngredients = [];
     let guessesMade = [];
     let localLeaderboard = JSON.parse(localStorage.getItem('michelin_ingredient_leaderboard')) || [];
+
+    // Expose functions to the window object so `onclick` works
+    window.submitGuess = submitGuess;
+    window.nextLevel = nextLevel;
+    window.resetGame = resetGame;
+
+    // Fisher-Yates Shuffle Algorithm
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 
     function normalizeString(str) {
         return str
@@ -493,7 +344,10 @@
         foundIngredients = [];
         guessesMade = [];
 
+        const currentLevel = Math.floor(index / 4) + 1;
+
         document.getElementById('dish-name-display').textContent = currentDish.name;
+        document.getElementById('level-display').textContent = currentLevel;
         document.getElementById('tries-display').textContent = attemptsRemaining;
         document.getElementById('score-display').textContent = score;
 
@@ -538,7 +392,17 @@
             return;
         }
 
-        const matchedIngredient = currentDish.ingredients.find(ing => normalizeString(ing) === normalizedInput);
+        // Check if singular/plural matches by testing both forms
+        const matchedIngredient = currentDish.ingredients.find(ing => {
+            const normIng = normalizeString(ing);
+            return (
+                normIng === normalizedInput ||
+                normIng === normalizedInput + 's' ||
+                normalizedInput === normIng + 's' ||
+                normIng === normalizedInput + 'es' ||
+                normalizedInput === normIng + 'es'
+            );
+        });
 
         guessesMade.push(normalizedInput);
         attemptsRemaining--;
@@ -584,8 +448,9 @@
 
     async function checkLeaderboard() {
         if (score > 0) {
+            const currentLevel = Math.floor(currentDishIndex / 4) + 1;
             try {
-                const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(5).get();
+                const snapshot = await db.collection("leaderboard").orderBy("level", "desc").orderBy("score", "desc").limit(20).get();
                 let array = [];
                 snapshot.forEach((doc) => {
                     array.push(doc.data());
@@ -597,12 +462,12 @@
                     setTimeout(() => {
                         const playerName = prompt("🎉 High Score Reached! Enter your name for the leaderboard:");
                         if (playerName && playerName.trim() !== "") {
-                            saveScoreToFirebase(playerName.trim(), score);
+                            saveScoreToFirebase(playerName.trim(), score, currentLevel);
                         }
                     }, 600);
                 }
             } catch (e) {
-                // Fallback to local leaderboard storage if database fails
+                // Fallback to local storage
                 let minScore = 0;
                 if (localLeaderboard.length >= 5) {
                     minScore = localLeaderboard[localLeaderboard.length - 1].score;
@@ -611,8 +476,8 @@
                     setTimeout(() => {
                         const playerName = prompt("🎉 High Score Reached! Enter your name for the leaderboard:");
                         if (playerName && playerName.trim() !== "") {
-                            localLeaderboard.push({ name: playerName.trim(), score: score });
-                            localLeaderboard.sort((a, b) => b.score - a.score);
+                            localLeaderboard.push({ name: playerName.trim(), score: score, level: currentLevel });
+                            localLeaderboard.sort((a, b) => b.level - a.level || b.score - a.score);
                             localLeaderboard = localLeaderboard.slice(0, 5);
                             localStorage.setItem('michelin_ingredient_leaderboard', JSON.stringify(localLeaderboard));
                             updateLeaderboardDisplay();
@@ -623,11 +488,12 @@
         }
     }
 
-    async function saveScoreToFirebase(name, score) {
+    async function saveScoreToFirebase(name, score, level) {
         try {
             await db.collection("leaderboard").add({
                 name: name,
                 score: score,
+                level: level,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
             updateLeaderboardDisplay();
@@ -638,7 +504,7 @@
 
     async function updateLeaderboardDisplay() {
         try {
-            const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(5).get();
+            const snapshot = await db.collection("leaderboard").orderBy("level", "desc").orderBy("score", "desc").limit(20).get();
             const listElement = document.getElementById('leaderboard-list');
             listElement.innerHTML = '';
 
@@ -647,18 +513,75 @@
                 return;
             }
 
+            let grouped = {};
             snapshot.forEach((doc) => {
                 const player = doc.data();
-                listElement.innerHTML += `<li><b>${escapeHtml(player.name)}</b>: ${player.score} pts</li>`;
+                const level = player.level || 1;
+                if (!grouped[level]) grouped[level] = [];
+                grouped[level].push(player);
             });
+
+            const sortedLevels = Object.keys(grouped).sort((a, b) => b - a);
+
+            sortedLevels.forEach(level => {
+                grouped[level].sort((a, b) => b.score - a.score);
+
+                let levelDiv = document.createElement('div');
+                levelDiv.style.color = 'var(--primary)';
+                levelDiv.style.marginTop = '10px';
+                levelDiv.style.marginBottom = '5px';
+                levelDiv.style.fontWeight = 'bold';
+                levelDiv.textContent = `Level ${level}`;
+                listElement.appendChild(levelDiv);
+
+                let ol = document.createElement('ol');
+                ol.style.margin = '0';
+                ol.style.paddingLeft = '20px';
+
+                grouped[level].forEach(player => {
+                    let li = document.createElement('li');
+                    li.innerHTML = `<b>${escapeHtml(player.name)}</b>: ${player.score} pts`;
+                    ol.appendChild(li);
+                });
+
+                listElement.appendChild(ol);
+            });
+
         } catch (e) {
             const listElement = document.getElementById('leaderboard-list');
+            listElement.innerHTML = '';
+
             if (localLeaderboard.length === 0) {
                 listElement.innerHTML = "<li>No entries yet. Be the first!</li>";
             } else {
-                listElement.innerHTML = localLeaderboard
-                    .map(player => `<li><b>${escapeHtml(player.name)}</b>: ${player.score} pts</li>`)
-                    .join('');
+                let grouped = {};
+                localLeaderboard.forEach(player => {
+                    const level = player.level || 1;
+                    if (!grouped[level]) grouped[level] = [];
+                    grouped[level].push(player);
+                });
+
+                const sortedLevels = Object.keys(grouped).sort((a, b) => b - a);
+                sortedLevels.forEach(level => {
+                    let levelDiv = document.createElement('div');
+                    levelDiv.style.color = 'var(--primary)';
+                    levelDiv.style.marginTop = '10px';
+                    levelDiv.style.marginBottom = '5px';
+                    levelDiv.style.fontWeight = 'bold';
+                    levelDiv.textContent = `Level ${level}`;
+                    listElement.appendChild(levelDiv);
+
+                    let ol = document.createElement('ol');
+                    ol.style.margin = '0';
+                    ol.style.paddingLeft = '20px';
+
+                    grouped[level].forEach(player => {
+                        let li = document.createElement('li');
+                        li.innerHTML = `<b>${escapeHtml(player.name)}</b>: ${player.score} pts`;
+                        ol.appendChild(li);
+                    });
+                    listElement.appendChild(ol);
+                });
             }
         }
     }
@@ -675,6 +598,8 @@
     function resetGame() {
         score = 0;
         currentDishIndex = 0;
+        // Re-shuffle the array
+        dishes = shuffleArray([...dishesDatabase]);
         loadDish(0);
     }
 
@@ -684,6 +609,8 @@
 
     // Initialize the game
     window.onload = () => {
+        // Initialize the array by making a copy and shuffling
+        dishes = shuffleArray([...dishesDatabase]);
         loadDish(0);
         updateLeaderboardDisplay();
     };
