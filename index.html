@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,7 @@
         :root {
             --primary: #7A1E1E; /* Vişne Çürüğü / Kırmızı */
             --bg: #EFE6D2;      /* Krem Arka Plan */
-            --surface: #e5dbc1;  /* Kart Arka Planı (Bir tık koyu krem) */
+            --surface: #e5dbc1;  /* Kart Arka Planı */
             --text: #2a2a2a;    /* Koyu Metin */
             --text-secondary: #5a5a5a;
             --white: #ffffff;
@@ -21,7 +21,6 @@
         }
 
         header { text-align: center; margin-bottom: 20px; width: 100%; max-width: 900px;}
-
         h1 { color: var(--primary); margin: 0; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; }
         p { color: var(--text-secondary); }
 
@@ -45,8 +44,6 @@
             background-color: var(--white); color: var(--text); font-size: 1rem; width: 100%; box-sizing: border-box;
         }
 
-        input[type="text"]:focus { outline: none; border-color: var(--primary); }
-
         button {
             padding: 12px; background-color: var(--primary); color: var(--white); border: none;
             border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%;
@@ -56,20 +53,11 @@
 
         .game-info { display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary); font-weight: bold;}
         .ingredient-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; width: 100%; justify-content: center; }
-
-        .ingredient-tag {
-            background: #d4c8b0; padding: 6px 12px; border-radius: 15px;
-            font-size: 0.85rem; color: var(--text-secondary); font-weight: bold;
-        }
+        .ingredient-tag { background: #d4c8b0; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; color: var(--text-secondary); font-weight: bold;}
         .ingredient-tag.found { background: var(--primary); color: var(--white); }
 
-        /* Footer Language Toggle */
         footer { margin-top: auto; padding: 20px; width: 100%; text-align: center; }
-        .lang-toggle {
-            padding: 10px 20px; background: var(--surface); border: 2px solid var(--primary);
-            color: var(--primary); cursor: pointer; border-radius: 25px; font-weight: bold; transition: 0.3s;
-        }
-        .lang-toggle:hover { background: var(--primary); color: var(--white); }
+        .lang-toggle { padding: 10px 20px; background: var(--surface); border: 2px solid var(--primary); color: var(--primary); cursor: pointer; border-radius: 25px; font-weight: bold; }
 
         .modal, .name-modal {
             display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -77,12 +65,7 @@
             flex-direction: column; gap: 15px; z-index: 100;
         }
 
-        .modal-content {
-            background-color: var(--surface); padding: 40px; border-radius: 10px;
-            text-align: center; border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        #leaderboard-list b { color: var(--primary); }
+        .modal-content { background-color: var(--surface); padding: 40px; border-radius: 10px; text-align: center; border: 2px solid var(--primary); }
 
         @media (max-width: 768px) { .game-container { flex-direction: column; } }
     </style>
@@ -100,56 +83,50 @@
             <p id="ui-dish-label" style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Dish Name</p>
             <h2 class="dish-title" id="dish-name-display">...</h2>
         </div>
-
         <div class="game-info">
             <div><span id="ui-level">Level</span>: <span id="level-display">1</span></div>
             <div><span id="ui-tries">Attempts</span>: <span id="tries-display">0</span></div>
             <div><span id="ui-score">Score</span>: <span id="score-display">0</span></div>
         </div>
-
         <div class="ingredient-list" id="found-ingredients-display"></div>
-
         <div class="controls">
             <input type="text" id="guess-input" placeholder="...">
             <button id="ui-submit-btn" onclick="submitGuess()">Submit</button>
         </div>
     </div>
-
     <div class="sidebar">
         <div class="leaderboard">
             <h3 id="ui-leaderboard-title">Live Race</h3>
-            <div id="leaderboard-list"></div>
+            <div id="leaderboard-list">
+                <p style="color:#888; font-size:0.8rem;">Mutfak bağlanıyor...</p>
+            </div>
         </div>
     </div>
 </div>
 
-<footer>
-    <button class="lang-toggle" onclick="toggleLanguage()">TR / EN</button>
-</footer>
+<footer><button class="lang-toggle" onclick="toggleLanguage()">TR / EN</button></footer>
 
 <div id="name-modal" class="name-modal">
     <div class="modal-content">
-        <h2 id="ui-welcome-title" style="color: var(--primary);">Welcome</h2>
-        <p id="ui-welcome-text">Enter your chef name:</p>
-        <input type="text" id="player-name-input" placeholder="..." style="margin-bottom: 15px; width: 80%; text-align: center; font-size: 1.1rem; padding: 10px;">
-        <button id="ui-start-btn" onclick="registerPlayer()" style="width: 200px;">Start</button>
+        <h2 id="ui-welcome-title">Chef's Canvas</h2>
+        <p id="ui-welcome-text">İsmini gir ve yarışa katıl:</p>
+        <input type="text" id="player-name-input" style="margin-bottom:15px; width:80%; text-align:center; padding:10px;">
+        <button onclick="registerPlayer()">Başla</button>
     </div>
 </div>
 
 <div id="win-modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <h2 id="ui-win-title" style="color: #2ed573;">🎉 Dish Complete! 🎉</h2>
-        <p><span id="ui-win-score-label">Score</span>: <span id="win-score">0</span></p>
-        <button id="ui-next-btn" onclick="nextLevel()" style="width: 200px; margin-top: 15px;">Next Dish</button>
+        <h2 id="ui-win-title" style="color: #2ed573;">🎉 Tebrikler! 🎉</h2>
+        <button onclick="nextLevel()">Sıradaki Yemek</button>
     </div>
 </div>
 
 <div id="lose-modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <h2 id="ui-lose-title" style="color: var(--primary);">Game Over!</h2>
-        <p id="ui-lose-text">The ingredients were:</p>
-        <p id="correct-ingredients-display" style="color: var(--primary); font-weight: bold;"></p>
-        <button id="ui-try-again-btn" onclick="resetGame()" style="width: 200px; margin-top: 15px;">Try Again</button>
+        <h2 id="ui-lose-title" style="color: var(--primary);">Oyun Bitti!</h2>
+        <p id="correct-ingredients-display"></p>
+        <button onclick="resetGame()">Tekrar Dene</button>
     </div>
 </div>
 
@@ -171,24 +148,8 @@
     const db = firebase.firestore();
 
     const translations = {
-        en: {
-            title: "Chef's Canvas", subtitle: "Guess the ingredients! (TR or EN supported)",
-            dishLabel: "Dish Name", level: "Level", tries: "Attempts", score: "Score",
-            submit: "Submit", leaderboard: "Live Race",
-            welcomeTitle: "Welcome", welcomeText: "Enter your chef name:",
-            start: "Start", win: "🎉 Dish Complete! 🎉", next: "Next Dish",
-            lose: "Game Over!", loseText: "The ingredients were:", tryAgain: "Try Again",
-            inputPlaceholder: "Type an ingredient...", namePlaceholder: "Your Name"
-        },
-        tr: {
-            title: "Şefin Tuvali", subtitle: "Malzemeleri tahmin et! (TR veya EN yazabilirsin)",
-            dishLabel: "Yemek Adı", level: "Seviye", tries: "Hak", score: "Skor",
-            submit: "Gönder", leaderboard: "Canlı Yarış",
-            welcomeTitle: "Hoş Geldin", welcomeText: "Şef adını gir:",
-            start: "Başla", win: "🎉 Yemek Tamamlandı! 🎉", next: "Sıradaki Yemek",
-            lose: "Oyun Bitti!", loseText: "Malzemeler şunlardı:", tryAgain: "Tekrar Dene",
-            inputPlaceholder: "Malzeme yaz...", namePlaceholder: "Adınız"
-        }
+        en: { title: "Chef's Canvas", subtitle: "Guess the ingredients! (TR or EN)", level: "Level", tries: "Attempts", score: "Score", submit: "Submit", leaderboard: "Live Race", win: "🎉 Dish Complete! 🎉", next: "Next Dish", lose: "Game Over!", tryAgain: "Try Again" },
+        tr: { title: "Şefin Tuvali", subtitle: "Malzemeleri tahmin et! (TR veya EN)", level: "Seviye", tries: "Hak", score: "Skor", submit: "Gönder", leaderboard: "Canlı Yarış", win: "🎉 Yemek Tamamlandı! 🎉", next: "Sıradaki Yemek", lose: "Oyun Bitti!", tryAgain: "Tekrar Dene" }
     };
 
     const ingredientMap = {
@@ -247,7 +208,7 @@
     let score = 0;
     let foundIngredients = [];
     let guessesMade = [];
-    let currentLang = 'en';
+    let currentLang = 'tr';
     let playerName = "";
     let playerDocId = null;
 
@@ -260,23 +221,15 @@
         const t = translations[currentLang];
         document.getElementById('ui-title').textContent = t.title;
         document.getElementById('ui-subtitle').textContent = t.subtitle;
-        document.getElementById('ui-dish-label').textContent = t.dishLabel;
         document.getElementById('ui-level').textContent = t.level;
         document.getElementById('ui-tries').textContent = t.tries;
         document.getElementById('ui-score').textContent = t.score;
         document.getElementById('ui-submit-btn').textContent = t.submit;
         document.getElementById('ui-leaderboard-title').textContent = t.leaderboard;
-        document.getElementById('ui-welcome-title').textContent = t.welcomeTitle;
-        document.getElementById('ui-welcome-text').textContent = t.welcomeText;
-        document.getElementById('ui-start-btn').textContent = t.start;
         document.getElementById('ui-win-title').textContent = t.win;
-        document.getElementById('ui-win-score-label').textContent = t.score;
         document.getElementById('ui-next-btn').textContent = t.next;
         document.getElementById('ui-lose-title').textContent = t.lose;
-        document.getElementById('ui-lose-text').textContent = t.loseText;
         document.getElementById('ui-try-again-btn').textContent = t.tryAgain;
-        document.getElementById('guess-input').placeholder = t.inputPlaceholder;
-        document.getElementById('player-name-input').placeholder = t.namePlaceholder;
         renderFoundIngredients();
     }
 
@@ -303,6 +256,7 @@
     }
 
     function loadDish(index) {
+        if (!dishes[index]) return;
         const currentDish = dishes[index];
         attemptsRemaining = currentDish.triesLimit;
         foundIngredients = [];
@@ -341,7 +295,7 @@
         const matched = dishes[currentDishIndex].ingredients.find(ing => {
             const normTR = normalizeString(ing);
             const normEN = ingredientMap[ing] ? normalizeString(ingredientMap[ing]) : "";
-            const check = (val, user) => val === user || val === user+'s' || user === val+'s' || val === user+'lar' || user === val+'lar' || user === val+'ler' || user === val+'ler';
+            const check = (val, user) => val === user || val === user+'s' || user === val+'s' || val === user+'lar' || val === user+'lar' || val === user+'ler' || user === val+'ler';
             return check(normTR, normInput) || (normEN && check(normEN, normInput));
         });
 
@@ -362,11 +316,7 @@
         document.getElementById('guess-input').value = '';
     }
 
-    function triggerWin() {
-        document.getElementById('win-score').textContent = score;
-        document.getElementById('win-modal').style.display = 'flex';
-    }
-
+    function triggerWin() { document.getElementById('win-modal').style.display = 'flex'; }
     function triggerLose() {
         const list = dishes[currentDishIndex].ingredients.map(ing => (currentLang === 'en' && ingredientMap[ing] ? ingredientMap[ing] : ing).toUpperCase());
         document.getElementById('correct-ingredients-display').textContent = list.join(', ');
@@ -386,34 +336,41 @@
     function startLiveLeaderboard() {
         db.collection("leaderboard").orderBy("level", "desc").orderBy("score", "desc").limit(20)
             .onSnapshot(snapshot => {
-                const list = document.getElementById('leaderboard-list');
-                list.innerHTML = '';
-                let grouped = {};
-                snapshot.forEach(doc => {
-                    const p = doc.data();
-                    if (!grouped[p.level]) grouped[p.level] = [];
-                    grouped[p.level].push(p);
-                });
-                Object.keys(grouped).sort((a,b)=>b-a).forEach(lvl => {
-                    let div = document.createElement('div');
-                    div.style.color = 'var(--primary)'; div.style.fontWeight='bold'; div.style.marginTop='10px';
-                    div.textContent = `${translations[currentLang].level} ${lvl}`;
-                    list.appendChild(div);
-                    let ol = document.createElement('ol');
-                    ol.style.paddingLeft='20px';
-                    grouped[lvl].sort((a,b)=>b.score-a.score).forEach(p => {
-                        let li = document.createElement('li');
-                        li.innerHTML = `<b>${p.name}</b>: ${p.score} pts`;
-                        ol.appendChild(li);
-                    });
-                    list.appendChild(ol);
-                });
+                renderLeaderboard(snapshot);
+            }, err => {
+                db.collection("leaderboard").orderBy("score", "desc").limit(20)
+                    .onSnapshot(snapshot => renderLeaderboard(snapshot));
             });
     }
 
+    function renderLeaderboard(snapshot) {
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = '';
+        let grouped = {};
+        snapshot.forEach(doc => {
+            const p = doc.data();
+            if (!grouped[p.level]) grouped[p.level] = [];
+            grouped[p.level].push(p);
+        });
+        Object.keys(grouped).sort((a,b)=>b-a).forEach(lvl => {
+            let div = document.createElement('div');
+            div.style.color = 'var(--primary)'; div.style.fontWeight='bold'; div.style.marginTop='10px';
+            div.textContent = `${translations[currentLang].level} ${lvl}`;
+            list.appendChild(div);
+            let ol = document.createElement('ol');
+            ol.style.paddingLeft='20px';
+            grouped[lvl].sort((a,b)=>b.score-a.score).forEach(p => {
+                let li = document.createElement('li');
+                li.innerHTML = `<b>${p.name}</b>: ${p.score} pts`;
+                ol.appendChild(li);
+            });
+            list.appendChild(ol);
+        });
+    }
+
     function nextLevel() {
-        if (currentDishIndex === dishes.length - 1) resetGame();
-        else { currentDishIndex++; loadDish(currentDishIndex); }
+        currentDishIndex++;
+        loadDish(currentDishIndex);
     }
 
     function resetGame() { location.reload(); }
