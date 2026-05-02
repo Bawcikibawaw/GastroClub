@@ -159,16 +159,6 @@
             margin-top: 0;
         }
 
-        ol {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        li {
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-
         .modal, .name-modal {
             display: flex;
             position: fixed;
@@ -333,6 +323,7 @@
     window.resetGame = resetGame;
     window.registerPlayer = registerPlayer;
 
+    // Fisher-Yates Shuffle Algorithm
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -379,6 +370,7 @@
             alert("Could not connect to database, falling back to local leaderboard!");
             dishes = shuffleArray([...dishesDatabase]);
             loadDish(0);
+            startLiveLeaderboard();
         }
     }
 
@@ -455,7 +447,7 @@
             score += 20;
             document.getElementById('score-display').textContent = score;
             renderFoundIngredients();
-            updateLiveScore(); // Send points live!
+            updateLiveScore(); // Send points live
         }
 
         if (foundIngredients.length === currentDish.ingredients.length) {
@@ -479,7 +471,7 @@
             document.getElementById('win-modal-title').textContent = "🎉 Dish Complete! 🎉";
             document.getElementById('next-btn-text').textContent = "Next Dish";
             document.getElementById('win-modal').style.display = 'flex';
-            checkLeaderboard(); // Update score status and continue
+            checkLeaderboard();
         }
     }
 
@@ -499,14 +491,21 @@
                     level: currentLevel
                 });
             } catch (e) {
-                // Fail quietly, local storage can still hold temp data
+                // Updating locally if not connected
+                localLeaderboard = localLeaderboard.map(p => {
+                    if (p.name === playerName) {
+                        p.score = score;
+                        p.level = Math.floor(currentDishIndex / 4) + 1;
+                    }
+                    return p;
+                });
+                localStorage.setItem('michelin_ingredient_leaderboard', JSON.stringify(localLeaderboard));
+                updateLeaderboardDisplay();
             }
         }
     }
 
     function checkLeaderboard() {
-        // Player standings are automatically updated live.
-        // This function exists for display & final event notifications
         updateLiveScore();
     }
 
@@ -561,6 +560,10 @@
     }
 
     function nextLevel() {
+        // Hide Modals
+        document.getElementById('win-modal').style.display = 'none';
+        document.getElementById('lose-modal').style.display = 'none';
+
         if (currentDishIndex === dishes.length - 1) {
             resetGame();
         } else {
@@ -570,9 +573,10 @@
     }
 
     function resetGame() {
+        document.getElementById('win-modal').style.display = 'none';
+        document.getElementById('lose-modal').style.display = 'none';
         score = 0;
         currentDishIndex = 0;
-        // Create a new entry for re-race
         playerName = "";
         playerDocId = null;
         document.getElementById('name-modal').style.display = 'flex';
