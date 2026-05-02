@@ -37,18 +37,32 @@
         }
 
         .dish-title { font-size: 1.4rem; color: var(--primary); margin: 0; }
-        .controls { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+
+        .controls { width: 100%; display: flex; flex-direction: column; gap: 5px; position: relative; }
 
         input[type="text"] {
             padding: 12px; border: 2px solid #d4c8b0; border-radius: 6px;
             background-color: var(--white); color: var(--text); font-size: 1rem; width: 100%; box-sizing: border-box;
         }
 
+        /* Suggestion Box Styling */
+        #suggestion-box {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--white); border: 1px solid var(--primary);
+            border-radius: 0 0 6px 6px; max-height: 150px; overflow-y: auto;
+            z-index: 10; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .suggestion-item {
+            padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;
+            color: var(--text); font-size: 0.9rem; text-align: left;
+        }
+        .suggestion-item:hover { background: var(--bg); color: var(--primary); }
+
         button {
             padding: 12px; background-color: var(--primary); color: var(--white); border: none;
             border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; width: 100%;
+            margin-top: 10px;
         }
-
         button:hover { background-color: #5a1515; transform: translateY(-2px); }
 
         .game-info { display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary); font-weight: bold;}
@@ -64,7 +78,6 @@
             background-color: rgba(239, 230, 210, 0.95); justify-content: center; align-items: center;
             flex-direction: column; gap: 15px; z-index: 100;
         }
-
         .modal-content { background-color: var(--surface); padding: 40px; border-radius: 10px; text-align: center; border: 2px solid var(--primary); }
 
         @media (max-width: 768px) { .game-container { flex-direction: column; } }
@@ -89,17 +102,17 @@
             <div><span id="ui-score">Score</span>: <span id="score-display">0</span></div>
         </div>
         <div class="ingredient-list" id="found-ingredients-display"></div>
+
         <div class="controls">
-            <input type="text" id="guess-input" placeholder="...">
+            <input type="text" id="guess-input" placeholder="..." autocomplete="off">
+            <div id="suggestion-box"></div>
             <button id="ui-submit-btn" onclick="submitGuess()">Submit</button>
         </div>
     </div>
     <div class="sidebar">
         <div class="leaderboard">
             <h3 id="ui-leaderboard-title">Live Race</h3>
-            <div id="leaderboard-list">
-                <p style="color:#888; font-size:0.8rem;">Mutfak bağlanıyor...</p>
-            </div>
+            <div id="leaderboard-list"></div>
         </div>
     </div>
 </div>
@@ -148,8 +161,8 @@
     const db = firebase.firestore();
 
     const translations = {
-        en: { title: "Chef's Canvas", subtitle: "Guess the ingredients! (TR or EN)", level: "Level", tries: "Attempts", score: "Score", submit: "Submit", leaderboard: "Live Race", win: "🎉 Dish Complete! 🎉", next: "Next Dish", lose: "Game Over!", tryAgain: "Try Again" },
-        tr: { title: "Şefin Tuvali", subtitle: "Malzemeleri tahmin et! (TR veya EN)", level: "Seviye", tries: "Hak", score: "Skor", submit: "Gönder", leaderboard: "Canlı Yarış", win: "🎉 Yemek Tamamlandı! 🎉", next: "Sıradaki Yemek", lose: "Oyun Bitti!", tryAgain: "Tekrar Dene" }
+        en: { title: "Chef's Canvas", subtitle: "Guess the ingredients! (TR or EN)", level: "Level", tries: "Attempts", score: "Score", submit: "Submit", leaderboard: "Live Race", win: "🎉 Dish Complete! 🎉", next: "Next Dish", lose: "Game Over!", tryAgain: "Try Again", placeholder: "Start typing..." },
+        tr: { title: "Şefin Tuvali", subtitle: "Malzemeleri tahmin et! (TR veya EN)", level: "Seviye", tries: "Hak", score: "Skor", submit: "Gönder", leaderboard: "Canlı Yarış", win: "🎉 Yemek Tamamlandı! 🎉", next: "Sıradaki Yemek", lose: "Oyun Bitti!", tryAgain: "Tekrar Dene", placeholder: "Yazmaya başla..." }
     };
 
     const ingredientMap = {
@@ -212,6 +225,9 @@
     let playerName = "";
     let playerDocId = null;
 
+    // Tüm malzemelerin listesini oluştur (Öneri kutusu için)
+    const allIngredientsList = Object.keys(ingredientMap);
+
     function toggleLanguage() {
         currentLang = currentLang === 'en' ? 'tr' : 'en';
         updateUI();
@@ -230,6 +246,7 @@
         document.getElementById('ui-next-btn').textContent = t.next;
         document.getElementById('ui-lose-title').textContent = t.lose;
         document.getElementById('ui-try-again-btn').textContent = t.tryAgain;
+        document.getElementById('guess-input').placeholder = t.placeholder;
         renderFoundIngredients();
     }
 
@@ -286,6 +303,53 @@
         });
     }
 
+    // Öneri sistemini güncelleme
+    document.getElementById('guess-input').oninput = function() {
+        const val = this.value.trim();
+        const box = document.getElementById('suggestion-box');
+        box.innerHTML = '';
+
+        if (val.length < 1) {
+            box.style.display = 'none';
+            return;
+        }
+
+        const normInput = normalizeString(val);
+
+        // Tüm malzemeleri dile göre filtrele
+        const suggestions = allIngredientsList.filter(ing => {
+            const tr = normalizeString(ing);
+            const en = normalizeString(ingredientMap[ing]);
+            if (currentLang === 'tr') return tr.includes(normInput);
+            return en.includes(normInput);
+        });
+
+        if (suggestions.length > 0) {
+            suggestions.forEach(ing => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                const display = currentLang === 'tr' ? ing : ingredientMap[ing];
+                item.textContent = display;
+                item.onclick = function() {
+                    document.getElementById('guess-input').value = display;
+                    box.style.display = 'none';
+                    submitGuess(); // Seçince otomatik gönder
+                };
+                box.appendChild(item);
+            });
+            box.style.display = 'block';
+        } else {
+            box.style.display = 'none';
+        }
+    };
+
+    // Kutu dışına tıklayınca önerileri kapat
+    document.addEventListener('click', (e) => {
+        if (e.target.id !== 'guess-input') {
+            document.getElementById('suggestion-box').style.display = 'none';
+        }
+    });
+
     function submitGuess() {
         const input = document.getElementById('guess-input').value.trim();
         if (!input || !dishes[currentDishIndex]) return;
@@ -314,6 +378,7 @@
         if (foundIngredients.length === dishes[currentDishIndex].ingredients.length) triggerWin();
         else if (attemptsRemaining <= 0) triggerLose();
         document.getElementById('guess-input').value = '';
+        document.getElementById('suggestion-box').style.display = 'none';
     }
 
     function triggerWin() { document.getElementById('win-modal').style.display = 'flex'; }
